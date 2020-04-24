@@ -1,0 +1,22 @@
+name: queuesim
+
+type: go
+
+up:
+  - go:
+      version: 1.12.9
+      modules: true
+
+# `dev run` runs `dev build` and then `dev run-built` if these are both defined.
+commands:
+  build:
+    run: go build -o queuesim
+  run-built:
+    desc: |
+      Run the target after `dev build`.
+      `dev run` is a special command that will run `dev build` and then `dev run-built` if they are both defined.
+    run: ./queuesim
+  test:
+    run: go test ./...
+  style:
+    run: 'golint ./... && errcheck ./...'
