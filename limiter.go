@@ -10,6 +10,7 @@ type Limiter struct {
 	limit       uint
 	currentTime int64
 	count       uint
+	lastCount   uint
 }
 
 func NewLimiter(limit uint) *Limiter {
@@ -19,8 +20,16 @@ func NewLimiter(limit uint) *Limiter {
 	}
 }
 
+func (l *Limiter) Limit() uint {
+	return l.limit
+}
+
 func (l *Limiter) Count() uint {
 	return l.count
+}
+
+func (l *Limiter) LastCount() uint {
+	return l.lastCount
 }
 
 func (l *Limiter) Incoming() bool {
@@ -35,6 +44,7 @@ func (l *Limiter) Incoming() bool {
 			return true
 		}
 	} else {
+		l.lastCount = l.count
 		l.count = 1
 		l.currentTime = time.Now().Unix()
 		return true

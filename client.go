@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 )
@@ -77,8 +78,19 @@ func (c *Client) String() string {
 	var str strings.Builder
 	str.WriteString(fmt.Sprintf("%d,%d,%d,%d,%d", c.id, makeTimestamp(c.startTime), makeTimestamp(c.endTime),
 		makeTimestamp(c.endTime)-makeTimestamp(c.startTime), c.pollRequests))
-	for k, v := range c.data {
-		str.WriteString(fmt.Sprintf(",%s=%v", k, v))
+
+	keys := make([]string, 0)
+	for k, _ := range c.data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		str.WriteString(fmt.Sprintf(",%s=", k))
+		if _, ok := c.data[k].(time.Time); ok {
+			str.WriteString(fmt.Sprintf("%d", makeTimestamp(c.data[k].(time.Time))))
+		} else {
+			str.WriteString(fmt.Sprintf("%v", c.data[k]))
+		}
 	}
 	return str.String()
 }
