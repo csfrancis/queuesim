@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"math"
+	"sort"
 	"sync"
 	"time"
 )
@@ -14,23 +16,55 @@ type Reactor struct {
 func (r *Reactor) Run() {
 	wg := r.startClients()
 	wg.Wait()
+}
 
+func (r *Reactor) Summary() {
 	for _, c := range r.Clients {
 		fmt.Printf("%s\n", c)
 	}
+
+	r.showClientFairnessSummary()
+
+	if backendSummary, ok := r.Backend.(BackendSummary); ok {
+		backendSummary.Summary()
+	}
+}
+
+func (r *Reactor) showClientFairnessSummary() {
+	total_polls := 0
+	durations := make([]int, 0)
+	for _, c := range r.Clients {
+		d := c.data["considered_duration"]
+		if d == nil {
+			d, _ = time.ParseDuration("0s")
+		}
+		durations = append(durations, int(d.(time.Duration).Seconds()*1000))
+
+		total_polls += c.PollRequests()
+	}
+	sort.Ints(durations)
+
+	p50 := durations[int(math.Floor(float64(len(durations))*0.50))]
+	p75 := durations[int(math.Floor(float64(len(durations))*0.75))]
+	p95 := durations[int(math.Floor(float64(len(durations))*0.95))]
+	p99 := durations[int(math.Floor(float64(len(durations))*0.99))]
+
+	fmt.Printf("considered_duration p50=%d,p75=%d,p95=%d,p99=%d\n", p50, p75, p95, p99)
+	fmt.Printf("total poll requests=%d\n", total_polls)
 }
 
 func (r *Reactor) startClients() *sync.WaitGroup {
 	wg := &sync.WaitGroup{}
-	numClients := len(r.Clients)
-	clientCount := 0
+	clientReady := &sync.WaitGroup{}
 	startCh := make(chan bool)
+
+	clientReady.Add(len(r.Clients))
 
 	for _, c := range r.Clients {
 		wg.Add(1)
 		go func(c *Client) {
 			defer wg.Done()
-			clientCount += 1
+			clientReady.Done()
 
 			<-startCh
 
@@ -38,9 +72,7 @@ func (r *Reactor) startClients() *sync.WaitGroup {
 		}(c)
 	}
 
-	for clientCount != numClients {
-		time.Sleep(1 * time.Millisecond)
-	}
+	clientReady.Wait()
 
 	close(startCh)
 
