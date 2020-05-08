@@ -24,9 +24,14 @@ func (r *Reactor) Summary() {
 	}
 
 	r.showClientFairnessSummary()
+
+	if backendSummary, ok := r.Backend.(BackendSummary); ok {
+		backendSummary.Summary()
+	}
 }
 
 func (r *Reactor) showClientFairnessSummary() {
+	total_polls := 0
 	durations := make([]int, 0)
 	for _, c := range r.Clients {
 		d := c.data["considered_duration"]
@@ -34,6 +39,8 @@ func (r *Reactor) showClientFairnessSummary() {
 			d, _ = time.ParseDuration("0s")
 		}
 		durations = append(durations, int(d.(time.Duration).Seconds()*1000))
+
+		total_polls += c.PollRequests()
 	}
 	sort.Ints(durations)
 
@@ -43,6 +50,7 @@ func (r *Reactor) showClientFairnessSummary() {
 	p99 := durations[int(math.Floor(float64(len(durations))*0.99))]
 
 	fmt.Printf("considered_duration p50=%d,p75=%d,p95=%d,p99=%d\n", p50, p75, p95, p99)
+	fmt.Printf("total poll requests=%d\n", total_polls)
 }
 
 func (r *Reactor) startClients() *sync.WaitGroup {

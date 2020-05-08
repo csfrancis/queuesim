@@ -13,7 +13,7 @@ type Client struct {
 	id           uint
 	startTime    time.Time
 	endTime      time.Time
-	pollRequests uint
+	pollRequests int
 	data         map[string]interface{}
 }
 
@@ -41,7 +41,7 @@ func (c *Client) CheckoutQueueDuration() time.Duration {
 	return c.endTime.Sub(c.startTime)
 }
 
-func (c *Client) PollRequests() uint {
+func (c *Client) PollRequests() int {
 	return c.pollRequests
 }
 

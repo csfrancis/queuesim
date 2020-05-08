@@ -8,3 +8,8 @@ type Backend interface {
 	Checkout(c *Client) (complete bool)
 	Poll(c *Client) (complete bool, pollAfter time.Duration)
 }
+
+type BackendSummary interface {
+	Status()
+	Summary()
+}
